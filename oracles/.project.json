@@ -1,0 +1,45 @@
+{
+  "fullNodeVersion": "v3.12.3",
+  "compilerOptionsUsed": {
+    "ignoreUnusedConstantsWarnings": false,
+    "ignoreUnusedVariablesWarnings": false,
+    "ignoreUnusedFieldsWarnings": false,
+    "ignoreUnusedPrivateFunctionsWarnings": false,
+    "ignoreUpdateFieldsCheckWarnings": false,
+    "ignoreCheckExternalCallerWarnings": false,
+    "ignoreUnusedFunctionReturnWarnings": false,
+    "skipAbstractContractCheck": false
+  },
+  "infos": {
+    "DIAOracleValue": {
+      "sourceFile": "mockdiaoracle.ral",
+      "sourceCodeHash": "fe1c4fc88531e7b789aae61e4fb87d5f8ab9d967b21bc661f7f1b48bf35b514f",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "DIAOracleWrapper": {
+      "sourceFile": "diaoraclewrapper.ral",
+      "sourceCodeHash": "d53019406d0aee3d49cf93bb49a6be83508d08f569b4aaa891572641c723d399",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": "e0e94814954464a641c01c396a1a58c8604aff3170fdd7149fc5ac7436ef7cd0"
+    },
+    "IDIAOracle": {
+      "sourceFile": "diaoraclewrapper.ral",
+      "sourceCodeHash": "d53019406d0aee3d49cf93bb49a6be83508d08f569b4aaa891572641c723d399",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "IOracle": {
+      "sourceFile": "diaoraclewrapper.ral",
+      "sourceCodeHash": "d53019406d0aee3d49cf93bb49a6be83508d08f569b4aaa891572641c723d399",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "MockDIAOracle": {
+      "sourceFile": "mockdiaoracle.ral",
+      "sourceCodeHash": "fe1c4fc88531e7b789aae61e4fb87d5f8ab9d967b21bc661f7f1b48bf35b514f",
+      "bytecodeDebugPatch": "=6-2+55=2-2+91=11-1+a=76+7a7e0214696e73657274206174206d617020706174683a2000=152",
+      "codeHashDebug": "55e3be8289094ade1e893c234b1e0ec1d0169afb728c008cb311d325c6c306f6"
+    }
+  }
+}

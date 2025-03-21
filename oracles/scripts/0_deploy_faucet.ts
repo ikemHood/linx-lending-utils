@@ -1,6 +1,6 @@
 import { Deployer, DeployFunction, Network } from '@alephium/cli'
 import { Settings } from '../alephium.config'
-import { TokenFaucet } from '../artifacts/ts'
+import { DIAOracleWrapper } from '../artifacts/ts'
 import { stringToHex } from '@alephium/web3'
 
 // This deploy function will be called by cli deployment tool automatically
@@ -10,21 +10,18 @@ const deployFaucet: DeployFunction<Settings> = async (
   network: Network<Settings>
 ): Promise<void> => {
   // Get settings
-  const issueTokenAmount = network.settings.issueTokenAmount
-  const result = await deployer.deployContract(TokenFaucet, {
-    // The amount of token to be issued
-    issueTokenAmount: issueTokenAmount,
+  const { diaOracleAddress, marketId, heartbeatInterval } = network.settings
+
+  const result = await deployer.deployContract(DIAOracleWrapper, {
     // The initial states of the faucet contract
     initialFields: {
-      symbol: stringToHex('TF'),
-      name: stringToHex('TokenFaucet'),
-      decimals: 18n,
-      supply: issueTokenAmount,
-      balance: issueTokenAmount
+      diaOracleAddress,
+      marketId,
+      heartbeatInterval
     }
   })
-  console.log('Token faucet contract id: ' + result.contractInstance.contractId)
-  console.log('Token faucet contract address: ' + result.contractInstance.address)
+  console.log('DIA Contract Wrapper contract id: ' + result.contractInstance.contractId)
+  console.log('DIA Contract Wrapper contract address: ' + result.contractInstance.address)
 }
 
 export default deployFaucet
