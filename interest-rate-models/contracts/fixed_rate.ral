@@ -1,0 +1,73 @@
+import "std/fungible_token_interface"
+
+struct MarketParams {
+    lendingAmount: U256
+}
+
+struct MarketState {
+    totalLendingOffers: U256
+}
+
+// Base interface for interest rate models
+Interface IInterestRate {
+    // Calculate the current borrow rate based on market parameters and state
+    // Returns: Rate scaled by 10^18 (1% = 0.01 * 10^18)
+    pub fn borrowRate(marketParams: MarketParams, marketState: MarketState) -> U256
+}
+
+// Extended interface for fixed rate models
+Interface IFixedRate extends IInterestRate {
+    // Get the current fixed rate
+    // Returns: Fixed rate scaled by 10^18 (1% = 0.01 * 10^18)
+    pub fn getRate() -> U256
+
+    // Set the borrow rate (can only be called once by admin)
+    // Parameters:
+    // - newBorrowRate: New rate scaled by 10^18
+    pub fn setBorrowRate(newBorrowRate: U256) -> ()
+}
+
+// Fixed Rate Interest Rate Model
+// Implements a constant borrow rate that doesn't change with market conditions
+Contract FixedRate(
+    admin: Address,
+    mut rate: U256,
+    mut rateUpdated: Bool
+) implements IFixedRate {
+    // Events for rate changes
+    event RateSet(setter: Address, oldRate: U256, newRate: U256)
+    
+    // Error codes
+    enum ErrorCodes {
+        RateAlreadySet = 0
+        InvalidRate = 1
+        NotAdmin = 2
+    }
+    
+    pub fn borrowRate(marketParams: MarketParams, marketState: MarketState) -> U256 {
+        // Fixed rate model, so we don't need to use marketParams and marketState
+        let _ = marketParams.lendingAmount
+        let _ = marketState.totalLendingOffers
+        return rate
+    }
+    
+    pub fn getRate() -> U256 {
+        return rate
+    }
+    
+    @using(updateFields = true, checkExternalCaller = false)
+    pub fn setBorrowRate(newBorrowRate: U256) -> () {
+        assert!(callerAddress!() == admin, ErrorCodes.NotAdmin)
+        assert!(!rateUpdated, ErrorCodes.RateAlreadySet)
+        assert!(newBorrowRate <= 1e20, ErrorCodes.InvalidRate)
+        
+        // Update the rate updated flag
+        rateUpdated = true
+        
+        // Update the rate with the new value
+        rate = newBorrowRate
+        
+        // Emit event for tracking
+        emit RateSet(callerAddress!(), rate, newBorrowRate)
+    }
+} 

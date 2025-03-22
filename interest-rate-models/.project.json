@@ -1,0 +1,63 @@
+{
+  "fullNodeVersion": "v3.12.2",
+  "compilerOptionsUsed": {
+    "ignoreUnusedConstantsWarnings": false,
+    "ignoreUnusedVariablesWarnings": false,
+    "ignoreUnusedFieldsWarnings": false,
+    "ignoreUnusedPrivateFunctionsWarnings": false,
+    "ignoreUpdateFieldsCheckWarnings": false,
+    "ignoreCheckExternalCallerWarnings": false,
+    "ignoreUnusedFunctionReturnWarnings": false,
+    "skipAbstractContractCheck": false
+  },
+  "infos": {
+    "FixedRate": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "9c0d9cf5c09314d31de0b1870cf189b7f545df74b89e86889c85392b94adcc88",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": "df8b9db6994c42768a71054a60710f03db9821f4059e474afbb062fd02e28685"
+    },
+    "IFixedRate": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "9c0d9cf5c09314d31de0b1870cf189b7f545df74b89e86889c85392b94adcc88",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "IFungibleToken": {
+      "sourceFile": "../node_modules/@alephium/web3/std/fungible_token_interface.ral",
+      "sourceCodeHash": "62910bf11e1eeb6cb2fd468626ff606a9b06306b2b81590c3b10f6deb5966bde",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "IInterestRate": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "9c0d9cf5c09314d31de0b1870cf189b7f545df74b89e86889c85392b94adcc88",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "InterestRateTokenFaucet": {
+      "sourceFile": "token.ral",
+      "sourceCodeHash": "af4d76649d76c47980fb428466be2b8d7272451a67e6e2fcfe764ea467732e03",
+      "bytecodeDebugPatch": "=20-2+71=111-1+4=10+a0007e02175468652063757272656e742062616c616e63652069732000=46",
+      "codeHashDebug": "06b49f3673daa80e1a2452f6478c177652dd9b9a5730be557aa9dd6dda347152"
+    },
+    "InterestRateWithdraw": {
+      "sourceFile": "withdraw.ral",
+      "sourceCodeHash": "448f79cfd66e9a6e483a6da674a85f506d54c6e0c842190e89791702b8f1bd87",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "MarketParams": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "9c0d9cf5c09314d31de0b1870cf189b7f545df74b89e86889c85392b94adcc88",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "MarketState": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "9c0d9cf5c09314d31de0b1870cf189b7f545df74b89e86889c85392b94adcc88",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    }
+  }
+}
