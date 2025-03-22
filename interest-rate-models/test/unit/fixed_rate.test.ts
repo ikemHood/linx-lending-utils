@@ -1,115 +1,139 @@
 import { web3, TestContractParams, addressFromContractId } from '@alephium/web3'
-import { randomContractId, testAddress } from '@alephium/web3-test'
+import { randomContractId, testAddress, expectAssertionError } from '@alephium/web3-test'
 import { FixedRate, FixedRateTypes } from '../../artifacts/ts'
 import { describe, it, expect, beforeAll } from '@jest/globals'
-import { expectAssertionError } from '@alephium/web3-test'
-
-// Create a mock of the contract to test directly without needing a node
-const mockFixedRate = {
-    initialState: {
-        rate: 100000000000000000n, // 0.1 * 10^18 = 10% in Wei format
-        rateUpdated: false,
-        admin: testAddress
-    },
-    getRate: () => {
-        return mockFixedRate.initialState.rate
-    },
-    setBorrowRate: (caller: string, newRate: bigint) => {
-        // Check if rate is already updated
-        if (mockFixedRate.initialState.rateUpdated) {
-            throw new Error('Assertion failed, error code: 0')
-        }
-
-        // Check if caller is admin
-        if (caller !== mockFixedRate.initialState.admin) {
-            throw new Error('Assertion failed, error code: 2')
-        }
-
-        // Check if rate is valid (not too high)
-        if (newRate > 1000000000000000000n) { // 1.0 * 10^18 = 100%
-            throw new Error('Assertion failed, error code: 1')
-        }
-
-        // Update state
-        const oldRate = mockFixedRate.initialState.rate
-        mockFixedRate.initialState.rate = newRate
-        mockFixedRate.initialState.rateUpdated = true
-
-        return {
-            events: [{ name: 'RateSet', fields: { oldRate, newRate } }],
-            contracts: [{ fields: mockFixedRate.initialState }],
-            returns: undefined
-        }
-    }
-}
 
 describe('unit tests', () => {
-    beforeAll(() => {
-        // Reset state before all tests
-        mockFixedRate.initialState = {
-            rate: 100000000000000000n,
-            rateUpdated: false,
-            admin: testAddress
+    let testContractId: string
+    let testContractAddress: string
+    let testParamsFixture: TestContractParams<FixedRateTypes.Fields, { newBorrowRate: bigint }>
+
+    // We initialize the fixture variables before all tests
+    beforeAll(async () => {
+        web3.setCurrentNodeProvider('http://127.0.0.1:22973', undefined, fetch)
+        testContractId = randomContractId()
+        testContractAddress = addressFromContractId(testContractId)
+        testParamsFixture = {
+            // a random address that the test contract resides in the tests
+            address: testContractAddress,
+            // assets owned by the test contract before a test
+            initialAsset: { alphAmount: 10n ** 18n },
+            // initial state of the test contract
+            initialFields: {
+                admin: testAddress,
+                rate: 100000000000000000n, // 0.1 * 10^18 = 10% in Wei format
+                rateUpdated: false
+            },
+            // arguments to test the target function of the test contract
+            testArgs: { newBorrowRate: 50000000000000000n }, // 0.05 * 10^18 = 5%
+            // assets owned by the caller of the function
+            inputAssets: [{ address: testAddress, asset: { alphAmount: 10n ** 18n } }]
         }
     })
 
-    it('should get the fixed rate', () => {
-        const rate = mockFixedRate.getRate()
-        expect(rate).toEqual(100000000000000000n)
-    })
-
-    it('should update the rate if caller is admin', () => {
-        const result = mockFixedRate.setBorrowRate(testAddress, 50000000000000000n)
-
-        expect(result.returns).toEqual(undefined)
-        expect(result.events.length).toEqual(1)
-        expect(result.events[0].name).toEqual('RateSet')
-
-        // Check that state was updated
-        expect(result.contracts[0].fields.rate).toEqual(50000000000000000n)
-        expect(result.contracts[0].fields.rateUpdated).toEqual(true)
-    })
-
-    it('should fail to update rate if already updated', () => {
-        // Reset the state but with rateUpdated set to true
-        mockFixedRate.initialState = {
-            rate: 100000000000000000n,
-            rateUpdated: true,
-            admin: testAddress
+    it('test getRate', async () => {
+        const testParams = {
+            ...testParamsFixture,
+            testArgs: {}
         }
 
-        try {
-            mockFixedRate.setBorrowRate(testAddress, 50000000000000000n)
-            throw new Error('Expected to throw an error but did not')
-        } catch (error: any) {
-            expect(error.message).toContain('Assertion failed, error code: 0')
-        }
+        const testResult = await FixedRate.tests.getRate(testParams)
+
+        // Check the return value
+        expect(testResult.returns).toEqual(100000000000000000n)
+
+        // Verify contract state remains unchanged
+        const contractState = testResult.contracts[0] as FixedRateTypes.State
+        expect(contractState.fields.rate).toEqual(100000000000000000n)
+        expect(contractState.fields.rateUpdated).toEqual(false)
+        expect(contractState.fields.admin).toEqual(testAddress)
     })
 
-    it('should fail to update rate if caller is not admin', () => {
-        // Reset the state
-        mockFixedRate.initialState = {
-            rate: 100000000000000000n,
-            rateUpdated: false,
-            admin: testAddress
+    it('test setBorrowRate success', async () => {
+        const testParams = {
+            ...testParamsFixture,
+            testArgs: { newBorrowRate: 50000000000000000n }
         }
 
+        const testResult = await FixedRate.tests.setBorrowRate(testParams)
+
+        // Check the return value
+        expect(testResult.returns).toEqual(null)
+
+        // Verify contract state was updated
+        const contractState = testResult.contracts[0] as FixedRateTypes.State
+        expect(contractState.fields.rate).toEqual(50000000000000000n)
+        expect(contractState.fields.rateUpdated).toEqual(true)
+        expect(contractState.fields.admin).toEqual(testAddress)
+
+        // Verify a RateSet event was emitted
+        expect(testResult.events.length).toEqual(1)
+        const event = testResult.events[0] as FixedRateTypes.RateSetEvent
+        expect(event.name).toEqual('RateSet')
+        expect(event.fields.setter).toEqual(testAddress)
+        expect(event.fields.oldRate).toEqual(100000000000000000n)
+        expect(event.fields.newRate).toEqual(50000000000000000n)
+    })
+
+    it('test setBorrowRate fails when already updated', async () => {
+        const testParams = {
+            ...testParamsFixture,
+            initialFields: {
+                ...testParamsFixture.initialFields,
+                rateUpdated: true
+            },
+            testArgs: { newBorrowRate: 50000000000000000n }
+        }
+
+        // Test that assertion fails with the RateAlreadySet error code (0)
+        await expectAssertionError(
+            FixedRate.tests.setBorrowRate(testParams),
+            testContractAddress,
+            0 // RateAlreadySet error code
+        )
+    })
+
+    it('test setBorrowRate fails when rate is too high', async () => {
+        const testParams = {
+            ...testParamsFixture,
+            testArgs: { newBorrowRate: 2000000000000000000n } // 2.0 * 10^18 = 200% (too high)
+        }
+
+        // Test that assertion fails with the InvalidRate error code (1)
+        await expectAssertionError(
+            FixedRate.tests.setBorrowRate(testParams),
+            testContractAddress,
+            1 // InvalidRate error code
+        )
+    })
+
+    it('test setBorrowRate fails when caller is not admin', async () => {
         const notAdmin = 'not-admin-address'
-
-        try {
-            mockFixedRate.setBorrowRate(notAdmin, 50000000000000000n)
-            throw new Error('Expected to throw an error but did not')
-        } catch (error: any) {
-            expect(error.message).toContain('Assertion failed, error code: 2')
+        const testParams = {
+            ...testParamsFixture,
+            inputAssets: [{ address: notAdmin, asset: { alphAmount: 10n ** 18n } }]
         }
+
+        // Test that assertion fails with the NotAdmin error code (2)
+        await expectAssertionError(
+            FixedRate.tests.setBorrowRate(testParams),
+            testContractAddress,
+            2 // NotAdmin error code
+        )
     })
 
-    it('should fail if rate is too high', () => {
-        try {
-            mockFixedRate.setBorrowRate(testAddress, 2000000000000000000n) // 2 * 10^18 = 200% (too high)
-            throw new Error('Expected to throw an error but did not')
-        } catch (error: any) {
-            expect(error.message).toContain('Assertion failed, error code: 1')
+    it('test borrowRate returns fixed rate regardless of market conditions', async () => {
+        const testParams = {
+            ...testParamsFixture,
+            testArgs: {
+                marketParams: { lendingAmount: 1000000000000000000000n }, // 1000 * 10^18
+                marketState: { totalLendingOffers: 2000000000000000000000n } // 2000 * 10^18
+            }
         }
+
+        const testResult = await FixedRate.tests.borrowRate(testParams)
+
+        // Check that it returns the fixed rate regardless of market conditions
+        expect(testResult.returns).toEqual(100000000000000000n)
     })
 }) 
