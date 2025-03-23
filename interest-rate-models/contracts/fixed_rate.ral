@@ -1,5 +1,3 @@
-import "std/fungible_token_interface"
-
 struct MarketParams {
     lendingAmount: U256
 }
