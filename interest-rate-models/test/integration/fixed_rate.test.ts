@@ -28,9 +28,6 @@ describe('integration tests', () => {
             expect(fixedRate.groupIndex).toEqual(testGroup)
             const initialState = await fixedRate.fetchState()
 
-            // Check the initial rate
-            const initialRate = initialState.fields.rate
-
             // Test setBorrowRate function with a new rate
             // Only execute this if rateUpdated is false
             if (!initialState.fields.rateUpdated) {
@@ -48,18 +45,13 @@ describe('integration tests', () => {
                 expect(updatedState.fields.rateUpdated).toEqual(true)
 
                 // Verify that attempt to set rate again fails (as rateUpdated is now true)
-                try {
-                    await fixedRate.transact.setBorrowRate({
+                await expect(
+                    fixedRate.transact.setBorrowRate({
                         signer: signer,
                         attoAlphAmount: DUST_AMOUNT * 3n,
                         args: { newBorrowRate: newRate * 2n }
                     })
-                    // Should not reach here
-                    throw new Error('Setting rate twice should fail')
-                } catch (error: any) {
-                    // Expected to fail with assertion error
-                    expect((error as Error).toString()).toContain('AssertionFailedError')
-                }
+                ).rejects.toThrow('AssertionFailedError')
             }
         }
     }, 20000)

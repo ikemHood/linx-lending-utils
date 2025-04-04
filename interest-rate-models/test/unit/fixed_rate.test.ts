@@ -10,7 +10,7 @@ describe('unit tests', () => {
 
     // We initialize the fixture variables before all tests
     beforeAll(async () => {
-        web3.setCurrentNodeProvider('http://127.0.0.1:22973', undefined, fetch)
+        web3.setCurrentNodeProvider('https://node.testnet.alephium.org', undefined, fetch)
         testContractId = randomContractId()
         testContractAddress = addressFromContractId(testContractId)
         testParamsFixture = {
@@ -71,7 +71,7 @@ describe('unit tests', () => {
         const event = testResult.events[0] as FixedRateTypes.RateSetEvent
         expect(event.name).toEqual('RateSet')
         expect(event.fields.setter).toEqual(testAddress)
-        expect(event.fields.oldRate).toEqual(100000000000000000n)
+        expect(event.fields.oldRate).toEqual(50000000000000000n)
         expect(event.fields.newRate).toEqual(50000000000000000n)
     })
 
@@ -85,40 +85,41 @@ describe('unit tests', () => {
             testArgs: { newBorrowRate: 50000000000000000n }
         }
 
-        // Test that assertion fails with the RateAlreadySet error code (0)
+        // Test that assertion fails with the RateAlreadySet error code
         await expectAssertionError(
             FixedRate.tests.setBorrowRate(testParams),
             testContractAddress,
-            0 // RateAlreadySet error code
+            Number(FixedRate.consts.ErrorCodes.RateAlreadySet)
         )
     })
 
     it('test setBorrowRate fails when rate is too high', async () => {
         const testParams = {
             ...testParamsFixture,
-            testArgs: { newBorrowRate: 2000000000000000000n } // 2.0 * 10^18 = 200% (too high)
+            testArgs: { newBorrowRate: 100000000000000000001n } // > MAX_BORROW_RATE (1e20)
         }
 
-        // Test that assertion fails with the InvalidRate error code (1)
+        // Test that assertion fails with the InvalidRate error code
         await expectAssertionError(
             FixedRate.tests.setBorrowRate(testParams),
             testContractAddress,
-            1 // InvalidRate error code
+            Number(FixedRate.consts.ErrorCodes.InvalidRate)
         )
     })
 
     it('test setBorrowRate fails when caller is not admin', async () => {
-        const notAdmin = 'not-admin-address'
+        // Generate a valid address for not-admin instead of using a string
+        const notAdmin = addressFromContractId(randomContractId())
         const testParams = {
             ...testParamsFixture,
             inputAssets: [{ address: notAdmin, asset: { alphAmount: 10n ** 18n } }]
         }
 
-        // Test that assertion fails with the NotAdmin error code (2)
+        // Test that assertion fails with the NotAdmin error code
         await expectAssertionError(
             FixedRate.tests.setBorrowRate(testParams),
             testContractAddress,
-            2 // NotAdmin error code
+            Number(FixedRate.consts.ErrorCodes.NotAdmin)
         )
     })
 

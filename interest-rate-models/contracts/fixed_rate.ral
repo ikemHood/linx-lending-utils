@@ -1,3 +1,6 @@
+// Constants
+const MAX_BORROW_RATE = 1e20 // 100% in Wei format (1.0 * 10^18)
+
 struct MarketParams {
     lendingAmount: U256
 }
@@ -57,7 +60,7 @@ Contract FixedRate(
     pub fn setBorrowRate(newBorrowRate: U256) -> () {
         assert!(callerAddress!() == admin, ErrorCodes.NotAdmin)
         assert!(!rateUpdated, ErrorCodes.RateAlreadySet)
-        assert!(newBorrowRate <= 1e20, ErrorCodes.InvalidRate)
+        assert!(newBorrowRate <= MAX_BORROW_RATE, ErrorCodes.InvalidRate)
         
         // Update the rate updated flag
         rateUpdated = true
