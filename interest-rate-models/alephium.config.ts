@@ -4,8 +4,12 @@ import { Number256 } from '@alephium/web3'
 // Settings are usually for configuring
 export type Settings = {
   issueTokenAmount: Number256
+  initialRate: Number256
 }
-const defaultSettings: Settings = { issueTokenAmount: 100n }
+const defaultSettings: Settings = {
+  issueTokenAmount: 100n,
+  initialRate: 50000000000000000n // 5% (0.05 * 10^18)
+}
 
 const configuration: Configuration<Settings> = {
   networks: {

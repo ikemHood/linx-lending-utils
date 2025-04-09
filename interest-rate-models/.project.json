@@ -1,0 +1,45 @@
+{
+  "fullNodeVersion": "v3.12.4",
+  "compilerOptionsUsed": {
+    "ignoreUnusedConstantsWarnings": false,
+    "ignoreUnusedVariablesWarnings": false,
+    "ignoreUnusedFieldsWarnings": false,
+    "ignoreUnusedPrivateFunctionsWarnings": false,
+    "ignoreUpdateFieldsCheckWarnings": false,
+    "ignoreCheckExternalCallerWarnings": false,
+    "ignoreUnusedFunctionReturnWarnings": false,
+    "skipAbstractContractCheck": false
+  },
+  "infos": {
+    "FixedRate": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "445d644ed85079ee72feeeb06d15d73b2d5226e6e87ff4a7485efce9bf4b0410",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": "df8b9db6994c42768a71054a60710f03db9821f4059e474afbb062fd02e28685"
+    },
+    "IFixedRate": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "445d644ed85079ee72feeeb06d15d73b2d5226e6e87ff4a7485efce9bf4b0410",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "IInterestRate": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "445d644ed85079ee72feeeb06d15d73b2d5226e6e87ff4a7485efce9bf4b0410",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "MarketParams": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "445d644ed85079ee72feeeb06d15d73b2d5226e6e87ff4a7485efce9bf4b0410",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    },
+    "MarketState": {
+      "sourceFile": "fixed_rate.ral",
+      "sourceCodeHash": "445d644ed85079ee72feeeb06d15d73b2d5226e6e87ff4a7485efce9bf4b0410",
+      "bytecodeDebugPatch": "",
+      "codeHashDebug": ""
+    }
+  }
+}
