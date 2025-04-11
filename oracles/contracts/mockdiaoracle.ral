@@ -1,0 +1,59 @@
+// Represents a value and its associated timestamp as provided by DIA Oracle.
+struct DIAOracleValue {
+    // The value reported by the DIA Oracle.
+    value: U256,
+    // The timestamp at which the value was last updated in the DIA Oracle.
+    timestamp: U256
+}
+
+// A mock implementation of DIA Oracle contract for testing purposes.
+// This contract allows setting and retrieving price values for specific keys.
+Contract MockDIAOracle() {
+    // A mapping to store price values and their timestamps for different keys.
+    // The first key is the address of the entity that set the price, and the second key
+    // is the market identifier.
+    mapping[ByteVec, DIAOracleValue] prices
+    
+    // Emitted when a price is successfully set for a given key.
+    event PriceSet(key: ByteVec, price: U256, timestamp: U256)
+    
+    // Sets the price for a given key.
+    //
+    // # Arguments
+    //
+    // * `key`: The key (typically a market identifier) for which to set the price.
+    // * `price`: The new price value.
+    //
+    // # Permissions
+    //
+    // This function is marked with `@using(preapprovedAssets = true, checkExternalCaller = false)`,
+    // allowing any caller to set the price. It is assumed that a minimal ALPH deposit
+    // will be provided for the new map entry.
+    @using(preapprovedAssets = true, checkExternalCaller = false)
+    pub fn setPrice(key: ByteVec, price: U256) -> () {
+        // The caller will deposit a minimal ALPH deposit for the new map entry which is a subcontract
+        let caller = callerAddress!()
+    
+        let timestamp = blockTimeStamp!()
+        let value = DIAOracleValue { value: price, timestamp: timestamp }
+        prices.insert!(caller, key, value)
+    
+        emit PriceSet(key, price, timestamp)
+    }
+    
+    // Retrieves the value and timestamp associated with a given key.
+    //
+    // # Arguments
+    //
+    // * `key`: The key (typically a market identifier) to query.
+    //
+    // # Returns
+    //
+    // A tuple containing:
+    // * `U256`: The value associated with the key.
+    // * `U256`: The timestamp of when the value was last set for the key.
+    pub fn getValue(key: ByteVec) -> (U256, U256) {
+        let DIAOracleValue { value, timestamp } = prices[key]
+        return value, timestamp
+    }
+}
