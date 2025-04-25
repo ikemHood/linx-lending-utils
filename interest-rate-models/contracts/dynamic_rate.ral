@@ -1,0 +1,9 @@
+
+Contract DynamicRate(
+    linx: Address,
+    mut admin: Address
+) extends Constants() implements IDynamicRate {
+    event BorrowRateUpdate(id: ByteVec, avgBorrowRate: U256, rateAtTarget: U256)
+    
+     
+}
