@@ -1,4 +1,3 @@
-
 struct MarketParams {
     loanToken: Address,
     collateralToken: Address,
@@ -15,19 +14,18 @@ struct MarketState {
 }
 
 Abstract Contract Constants() {
-    const MAX_BORROW_RATE = 1e20 // 100% in Wei format (1.0 * 10^18)
-    const WAD = 1e18
-    const TARGET_UTILIZATION = 8e17 // 80% target utilization
-    const INITIAL_RATE_AT_TARGET = 1e16 // Initial rate at target (1%)
-    const ADJUSTMENT_SPEED = 1e15 // Speed of rate adjustment
-    const CURVE_STEEPNESS = 4e18 // Curve steepness parameter (C)
-    const MIN_RATE_AT_TARGET = 1e15 // Min rate at target (0.1%)
-    const MAX_RATE_AT_TARGET = 3e17 // Max rate at target (30%)
+    const MAX_BORROW_RATE = 1e20  // 100% in Wei format (1.0 * 10^18)
+    const WAD = 1e18i 
+    const TARGET_UTILIZATION = 9e17i // 90% target utilization
+    const INITIAL_RATE_AT_TARGET = 4e16i / 31536000i // 4% per year converted to per second
+    const ADJUSTMENT_SPEED = 5e19i / 31536000i // 50/year converted to per second
+    const CURVE_STEEPNESS = 4e18i // Curve steepness parameter (C)
+    const MIN_RATE_AT_TARGET = 1e15i / 31536000i // 0.1% per year converted to per second
+    const MAX_RATE_AT_TARGET = 2e18i / 31536000i // 200% per year converted to per second
 
     enum ErrorCodes {
         NotAuthorized = 0
-        ZeroAddress = 1
-        RateAlreadySet = 2
-        InvalidRate = 3
+        RateAlreadySet = 1
+        InvalidRate = 2
     }
 }

@@ -1,9 +1,100 @@
-
 Contract DynamicRate(
     linx: Address,
     mut admin: Address
-) extends Constants() implements IDynamicRate {
-    event BorrowRateUpdate(id: ByteVec, avgBorrowRate: U256, rateAtTarget: U256)
+) extends Constants(), StringUtils(), CurveUtils() implements IDynamicRate {
+    // Storage
+    mapping[ByteVec, I256] rateAtTarget
     
-     
+    // Events
+    event BorrowRateUpdate(id: ByteVec, avgBorrowRate: U256, newRateAtTarget: U256)
+    
+    // Calculate and update borrow rate
+    @using(preapprovedAssets = true, checkExternalCaller = false)
+    pub fn getBorrowRateAndUpdate(marketParams: MarketParams, marketState: MarketState) -> U256 {
+        let caller = callerAddress!()
+        assert!(caller == linx, ErrorCodes.NotAuthorized)
+        
+        let id = calcMarketId(marketParams)
+        let (avgRate, endRateAtTarget) = calculateBorrowRate(id, marketState)
+        
+        if(rateAtTarget.contains!(id)) {
+            rateAtTarget[id] = endRateAtTarget
+        } else {
+            rateAtTarget.insert!(caller, id, endRateAtTarget)
+        }
+        
+        // Emit event for tracking
+        emit BorrowRateUpdate(id, avgRate, toU256!(endRateAtTarget))
+        
+        return avgRate
+    }
+    
+    // View function that doesn't modify state
+    pub fn borrowRate(marketParams: MarketParams, marketState: MarketState) -> U256 {
+        let id = calcMarketId(marketParams)
+        let (avgRate, _) = calculateBorrowRate(id, marketState)
+        return avgRate
+    }
+
+    pub fn getRateAtTarget(id: ByteVec) -> U256 {
+        return toU256!(rateAtTarget[id])
+    }
+    
+    // Internal function to calculate borrow rate
+    fn calculateBorrowRate(id: ByteVec, market: MarketState) -> (U256, I256) {
+        // Calculate utilization
+        let mut utilization = 0i
+        if (market.totalSupplyAssets > 0) {
+            utilization = wadDiv(toI256!(market.totalBorrowAssets), toI256!(market.totalSupplyAssets))
+        }
+        
+        // Calculate error normalized by distance to target
+        let mut errNormFactor = TARGET_UTILIZATION
+        if (utilization > TARGET_UTILIZATION) {
+            errNormFactor = WAD - TARGET_UTILIZATION
+        }
+        
+        let mut err = 0i
+        if (errNormFactor > 0i) {
+            err = wadDiv(utilization - TARGET_UTILIZATION, errNormFactor)
+        }
+        
+        let startRateAtTarget = rateAtTarget[id]
+        
+        let mut avgRateAtTarget = 0i
+        let mut endRateAtTarget = 0i
+        
+        if (startRateAtTarget == 0i) {
+            // First interaction
+            avgRateAtTarget = INITIAL_RATE_AT_TARGET
+            endRateAtTarget = INITIAL_RATE_AT_TARGET
+        } else {
+            // Calculate adjustment
+            let speed = wadMul(ADJUSTMENT_SPEED, err)
+            let elapsed = blockTimeStamp!() - market.lastUpdate
+            let linearAdaptation = speed * toI256!(elapsed)
+            
+            if (linearAdaptation == 0i) {
+                avgRateAtTarget = startRateAtTarget
+                endRateAtTarget = startRateAtTarget
+            } else {
+                endRateAtTarget = newRateAtTarget(startRateAtTarget, linearAdaptation)
+                let midRateAtTarget = newRateAtTarget(startRateAtTarget, linearAdaptation / 2i)
+                avgRateAtTarget = (startRateAtTarget + endRateAtTarget + 2i * midRateAtTarget) / 4i
+            }
+        }
+        
+        // Apply the rate curve
+        let avgRate = applyCurve(avgRateAtTarget, err)
+        return toU256!(avgRate), endRateAtTarget
+    }
+
+    // Allow admin to transfer admin rights
+    @using(updateFields = true, checkExternalCaller = false)
+    pub fn transferAdmin(newAdmin: Address) -> () {
+        assert!(callerAddress!() == admin, ErrorCodes.NotAuthorized)
+
+        admin = newAdmin
+    }
+  
 }

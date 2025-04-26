@@ -1,0 +1,9 @@
+Abstract Contract StringUtils() {
+
+    fn calcMarketId(marketParams: MarketParams) -> ByteVec {
+        let loanTokenId = addressToContractId!(marketParams.loanToken)
+        let collateralTokenId = addressToContractId!(marketParams.collateralToken)
+        return loanTokenId++collateralTokenId
+    }
+}
+

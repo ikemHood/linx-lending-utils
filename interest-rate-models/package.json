@@ -25,7 +25,7 @@
     "test": "jest -i --config ./jest-config.json"
   },
   "dependencies": {
-    "@alephium/web3": "^1.11.3",
+    "@alephium/web3": "^1.11.6",
     "@types/mocha": "^10.0.10"
   },
   "devDependencies": {

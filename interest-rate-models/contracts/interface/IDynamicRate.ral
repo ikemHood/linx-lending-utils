@@ -1,7 +1,8 @@
 // Extended interface for dynamic rate models
 Interface IDynamicRate extends IInterestRate {
-    /// @notice Returns the borrow rate per second (scaled by WAD) of the market `marketParams` without modifying any
-    /// storage.
-    /// @dev Assumes that `market` corresponds to `marketParams`.
-    pub fn borrowRateView(marketParams: MarketParams, marketState: MarketState) -> U256
+
+    @using(preapprovedAssets = true, checkExternalCaller = false)
+    pub fn getBorrowRateAndUpdate(marketParams: MarketParams, marketState: MarketState) -> U256
+
+    pub fn getRateAtTarget(id: ByteVec) -> U256
 }
