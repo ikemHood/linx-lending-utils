@@ -129,7 +129,10 @@ Contract DynamicRate(
             err = wadDiv(utilization - TARGET_UTILIZATION, errNormFactor)
         }
         
-        let startRateAtTarget = rateAtTarget[id]
+        let mut startRateAtTarget = 0i
+        if (rateAtTarget.contains!(id)) {
+            startRateAtTarget = rateAtTarget[id]
+        }
         
         let mut avgRateAtTarget = 0i
         let mut endRateAtTarget = 0i
@@ -173,6 +176,10 @@ Contract DynamicRate(
       let oldAdmin = admin
       admin = newAdmin
       emit AdminTransferred(oldAdmin, newAdmin)
+    }
+
+    pub fn marketId(loanToken: Address, collateralToken: Address) -> ByteVec {
+        return calcMarketId(loanToken, collateralToken)
     }
 }
 
