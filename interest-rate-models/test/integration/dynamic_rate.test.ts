@@ -28,7 +28,6 @@ describe('dynamic rate integration tests', () => {
             expect(dynamicRate.groupIndex).toEqual(testGroup)
             const initialState = await dynamicRate.fetchState()
 
-            console.log(initialState)
             // Test transfer admin 
             const newAdmin = testAddress // Using same address for simplicity
             await dynamicRate.transact.transferAdmin({
@@ -57,16 +56,20 @@ describe('dynamic rate integration tests', () => {
                 fee: 0n
             }
 
+            const rateAtTarget = await dynamicRate.view.getRateAtTarget({
+                args: { loanToken: testAddress, collateralToken: testAddress }
+            })
+
+            console.log('rateAtTarget', rateAtTarget)
+
             // Call the view function 
-            const viewResult = await dynamicRate.multicall({
-                borrowRate: {
-                    args: { marketParams, marketState }
-                }
+            const viewResult = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState }
             })
 
             // Verify view function returns a valid rate
             // The result is a CallContractResult object with returns property
-            expect(viewResult.borrowRate.returns > 0n).toBeTruthy()
+            expect(viewResult.returns > 0n).toBeTruthy()
 
             // Note: We can't directly test the borrowRate function in integration test
             // since it requires the caller to be linx address. This would need to be 

@@ -70,6 +70,7 @@ describe('dynamic rate unit tests', () => {
         }
 
         const testResult = await DynamicRate.tests.borrowRate(testParams)
+        console.log('testResult', testResult)
 
         // For first interaction, should return the initial rate at target
         // with appropriate curve adjustment based on utilization
@@ -110,7 +111,7 @@ describe('dynamic rate unit tests', () => {
         }
 
         await expectAssertionError(
-            DynamicRate.tests.borrowRate(testParams),
+            DynamicRate.tests.getBorrowRateAndUpdate(testParams),
             testContractAddress,
             Number(DynamicRate.consts.ErrorCodes.NotAuthorized)
         )
@@ -140,7 +141,7 @@ describe('dynamic rate unit tests', () => {
             }
         }
 
-        const testResult = await DynamicRate.tests.borrowRate(testParams)
+        const testResult = await DynamicRate.tests.getBorrowRateAndUpdateTest(testParams)
 
         // Check the return value
         expect(testResult.returns).toBeDefined()
@@ -177,7 +178,7 @@ describe('dynamic rate unit tests', () => {
             }
         }
 
-        const testResultHigh = await DynamicRate.tests.borrowRate(testParams)
+        const testResultHigh = await DynamicRate.tests.getBorrowRateAndUpdateTest(testParams)
 
         // Now test with lower utilization to compare
         const marketStateWithLowUtilization = {
@@ -193,7 +194,7 @@ describe('dynamic rate unit tests', () => {
             }
         }
 
-        const testResultLow = await DynamicRate.tests.borrowRate(testParamsLow)
+        const testResultLow = await DynamicRate.tests.getBorrowRateAndUpdateTest(testParamsLow)
 
         // High utilization should give higher rate
         expect(testResultHigh.returns > testResultLow.returns).toBeTruthy()
@@ -224,7 +225,7 @@ describe('dynamic rate unit tests', () => {
         }
 
         // Should not revert with division by zero
-        const testResult = await DynamicRate.tests.borrowRate(testParams)
+        const testResult = await DynamicRate.tests.getBorrowRateAndUpdateTest(testParams)
         expect(testResult.returns).toBeDefined()
     })
 
@@ -299,7 +300,7 @@ describe('dynamic rate unit tests', () => {
             }
         }
 
-        const initialResult = await DynamicRate.tests.borrowRate(initialTestParams)
+        const initialResult = await DynamicRate.tests.getBorrowRateAndUpdateTest(initialTestParams)
 
         // Now simulate passage of time and changed utilization
         const laterMarketState = {
@@ -316,7 +317,7 @@ describe('dynamic rate unit tests', () => {
             }
         }
 
-        const laterResult = await DynamicRate.tests.borrowRate(laterTestParams)
+        const laterResult = await DynamicRate.tests.getBorrowRateAndUpdateTest(laterTestParams)
 
         // Rates should adjust over time, with higher utilization leading to higher rates
         expect(laterResult.returns > initialResult.returns).toBeTruthy()

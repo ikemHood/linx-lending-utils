@@ -37,16 +37,12 @@ describe('string utils unit tests', () => {
         // Create addresses for testing
         const loanToken = addressFromContractId(randomContractId())
         const collateralToken = addressFromContractId(randomContractId())
-        const oracle = addressFromContractId(randomContractId())
 
         const testParams = {
             ...testParamsFixture,
             testArgs: {
-                marketParams: {
-                    loanToken,
-                    collateralToken,
-                    oracle
-                }
+                loanToken,
+                collateralToken
             }
         }
 
@@ -60,11 +56,8 @@ describe('string utils unit tests', () => {
         const testParams2 = {
             ...testParamsFixture,
             testArgs: {
-                marketParams: {
-                    loanToken: newLoanToken,
-                    collateralToken,
-                    oracle
-                }
+                loanToken: newLoanToken,
+                collateralToken
             }
         }
 
@@ -77,11 +70,8 @@ describe('string utils unit tests', () => {
         const testParams3 = {
             ...testParamsFixture,
             testArgs: {
-                marketParams: {
-                    loanToken,
-                    collateralToken,
-                    oracle
-                }
+                loanToken,
+                collateralToken
             }
         }
 

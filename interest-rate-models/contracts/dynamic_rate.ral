@@ -7,6 +7,7 @@ Contract DynamicRate(
     
     // Events
     event BorrowRateUpdate(id: ByteVec, avgBorrowRate: U256, newRateAtTarget: U256)
+    event AdminTransferred(oldAdmin: Address, newAdmin: Address)
     
     // Calculate and update borrow rate
     @using(preapprovedAssets = true, checkExternalCaller = false)
@@ -14,7 +15,7 @@ Contract DynamicRate(
         let caller = callerAddress!()
         assert!(caller == linx, ErrorCodes.NotAuthorized)
         
-        let id = calcMarketId(marketParams)
+        let id = calcMarketId(marketParams.loanToken, marketParams.collateralToken)
         let (avgRate, endRateAtTarget) = calculateBorrowRate(id, marketState)
         
         if(rateAtTarget.contains!(id)) {
@@ -29,19 +30,46 @@ Contract DynamicRate(
         return avgRate
     }
     
+    // Special test-only function that doesn't check authorization
+    // @using(preapprovedAssets = true, checkExternalCaller = false)
+    // pub fn getBorrowRateAndUpdateTest(marketParams: MarketParams, marketState: MarketState) -> U256 {
+    //     let id = calcMarketId(marketParams.loanToken, marketParams.collateralToken)
+    //     let (avgRate, endRateAtTarget) = calculateBorrowRate(id, marketState)
+        
+    //     if(rateAtTarget.contains!(id)) {
+    //         rateAtTarget[id] = endRateAtTarget
+    //     } else {
+    //         rateAtTarget.insert!(callerAddress!(), id, endRateAtTarget)
+    //     }
+        
+    //     // Emit event for tracking
+    //     emit BorrowRateUpdate(id, avgRate, toU256!(endRateAtTarget))
+        
+    //     return avgRate
+    // }
+    
     // View function that doesn't modify state
     pub fn borrowRate(marketParams: MarketParams, marketState: MarketState) -> U256 {
-        let id = calcMarketId(marketParams)
+        let id = calcMarketId(marketParams.loanToken, marketParams.collateralToken)
         let (avgRate, _) = calculateBorrowRate(id, marketState)
         return avgRate
     }
 
-    pub fn getRateAtTarget(id: ByteVec) -> U256 {
-        return toU256!(rateAtTarget[id])
+    // @using(checkExternalCaller = false)
+    pub fn getRateAtTarget(loanToken: Address, collateralToken: Address) -> U256 {
+        let id = calcMarketId(loanToken, collateralToken)
+        let mut rate = 0i
+        if (rateAtTarget.contains!(id)) {
+            rate = rateAtTarget[id]
+        }
+        return toU256!(rate)
     }
     
     // Internal function to calculate borrow rate
     fn calculateBorrowRate(id: ByteVec, market: MarketState) -> (U256, I256) {
+        // Debug log
+        // emit Debug(`Calculating borrow rate for ${market.totalSupplyAssets}/${market.totalBorrowAssets}`)
+        
         // Calculate utilization
         let mut utilization = 0i
         if (market.totalSupplyAssets > 0) {
@@ -92,9 +120,11 @@ Contract DynamicRate(
     // Allow admin to transfer admin rights
     @using(updateFields = true, checkExternalCaller = false)
     pub fn transferAdmin(newAdmin: Address) -> () {
-        assert!(callerAddress!() == admin, ErrorCodes.NotAuthorized)
+      assert!(callerAddress!() == admin, ErrorCodes.NotAuthorized)
 
-        admin = newAdmin
+      let oldAdmin = admin
+      admin = newAdmin
+      emit AdminTransferred(oldAdmin, newAdmin)
     }
-  
 }
+

@@ -27,5 +27,6 @@ Abstract Contract Constants() {
         NotAuthorized = 0
         RateAlreadySet = 1
         InvalidRate = 2
+        ZeroAddress = 3
     }
 }

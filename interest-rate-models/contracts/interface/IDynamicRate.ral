@@ -4,5 +4,5 @@ Interface IDynamicRate extends IInterestRate {
     @using(preapprovedAssets = true, checkExternalCaller = false)
     pub fn getBorrowRateAndUpdate(marketParams: MarketParams, marketState: MarketState) -> U256
 
-    pub fn getRateAtTarget(id: ByteVec) -> U256
+    pub fn getRateAtTarget(loanToken: Address, collateralToken: Address) -> U256
 }

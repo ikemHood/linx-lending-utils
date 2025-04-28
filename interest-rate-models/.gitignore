@@ -1,3 +1,151 @@
 node_modules/
 artifacts/
 dist/
+
+// Dynamic Rate Interest Rate Model
+// Implements AdaptiveCurve IRM similar to Morpho's implementation
+
+Contract DynamicRate(
+    linx: Address,
+    mut admin: Address
+) extends Constants() implements IDynamicRate {
+    // Event emitted when borrow rate is updated
+    event BorrowRateUpdate(id: ByteVec, avgBorrowRate: U256, rateAtTarget: U256)
+    
+    // Mapping to store rates by market ID
+    mapping[ByteVec, U256] rateAtTarget
+    
+    // Calculate and update borrow rate
+    pub fn borrowRate(marketParams: MarketParams, marketState: MarketState) -> U256 {
+        assert!(callerAddress!() == linx, ErrorCodes.NotAuthorized)
+        
+        let id = calcMarketId(marketParams)
+        let (avgRate, endRateAtTarget) = calculateBorrowRate(id, marketState)
+        
+        // Update the rate at target for this market
+        rateAtTarget[id] = endRateAtTarget
+        
+        // Emit event for tracking
+        emit BorrowRateUpdate(id, avgRate, endRateAtTarget)
+        
+        return avgRate
+    }
+    
+    // View function that doesn't modify state
+    pub fn borrowRateView(marketParams: MarketParams, marketState: MarketState) -> U256 {
+        let id = calcMarketId(marketParams)
+        let (avgRate, _) = calculateBorrowRate(id, marketState)
+        return avgRate
+    }
+    
+    // Calculate a simple market ID for use as a key
+    fn calcMarketId(marketParams: MarketParams) -> ByteVec {
+        // For simplicity, just use the loan token address as the ID
+        // Convert the address to a contract ID, and use that as bytes
+        let contractId = addressToContractId!(marketParams.loanToken)
+        return contractId
+    }
+    
+    // Internal function to calculate borrow rate
+    fn calculateBorrowRate(id: ByteVec, market: MarketState) -> (U256, U256) {
+        // Calculate utilization
+        let utilization = if (market.totalSupplyAssets > 0) {
+            wadDiv(market.totalBorrowAssets, market.totalSupplyAssets)
+        } else {
+            0
+        }
+        
+        // Calculate error normalized by distance to target
+        let errNormFactor = if (utilization > TARGET_UTILIZATION) {
+            WAD - TARGET_UTILIZATION
+        } else {
+            TARGET_UTILIZATION
+        }
+        
+        let err = if (errNormFactor > 0) {
+            wadDiv(utilization - TARGET_UTILIZATION, errNormFactor)
+        } else {
+            0
+        }
+        
+        let startRateAtTarget = rateAtTarget[id]
+        
+        let avgRateAtTarget: U256
+        let endRateAtTarget: U256
+        
+        if (startRateAtTarget == 0) {
+            // First interaction
+            avgRateAtTarget = INITIAL_RATE_AT_TARGET
+            endRateAtTarget = INITIAL_RATE_AT_TARGET
+        } else {
+            // Calculate adjustment
+            let speed = wadMul(ADJUSTMENT_SPEED, err)
+            let elapsed = blockTimeStamp!() - market.lastUpdate
+            let linearAdaptation = speed * elapsed
+            
+            if (linearAdaptation == 0) {
+                avgRateAtTarget = startRateAtTarget
+                endRateAtTarget = startRateAtTarget
+            } else {
+                endRateAtTarget = newRateAtTarget(startRateAtTarget, linearAdaptation)
+                let midRateAtTarget = newRateAtTarget(startRateAtTarget, linearAdaptation / 2)
+                avgRateAtTarget = (startRateAtTarget + endRateAtTarget + 2 * midRateAtTarget) / 4
+            }
+        }
+        
+        // Apply the rate curve
+        return (applyCurve(avgRateAtTarget, err), endRateAtTarget)
+    }
+    
+    // Apply the interest rate curve
+    fn applyCurve(rateAtTarget: U256, err: U256) -> U256 {
+        let coeff = if (err < 0) {
+            WAD - wadDiv(WAD, CURVE_STEEPNESS)
+        } else {
+            CURVE_STEEPNESS - WAD
+        }
+        
+        return wadMul(wadMul(coeff, err) + WAD, rateAtTarget)
+    }
+    
+    // Calculate new rate with exponential growth/decay
+    fn newRateAtTarget(startRateAtTarget: U256, linearAdaptation: U256) -> U256 {
+        let expFactor = wadExp(linearAdaptation)
+        let newRate = wadMul(startRateAtTarget, expFactor)
+        
+        // Bound the rate
+        return if (newRate < MIN_RATE_AT_TARGET) {
+            MIN_RATE_AT_TARGET
+        } else if (newRate > MAX_RATE_AT_TARGET) {
+            MAX_RATE_AT_TARGET
+        } else {
+            newRate
+        }
+    }
+    
+    // Exponential function approximation (Taylor series)
+    fn wadExp(x: U256) -> U256 {
+        if (x == 0) {
+            return WAD
+        }
+        
+        let x2 = wadMul(x, x)
+        let x3 = wadMul(x2, x)
+        
+        // e^x ≈ 1 + x + x^2/2 + x^3/6
+        return WAD + x + wadDiv(x2, 2 * WAD) + wadDiv(x3, 6 * WAD)
+    }
+    
+    // WAD division (18 decimals)
+    fn wadDiv(a: U256, b: U256) -> U256 {
+        if (b == 0) {
+            return 0
+        }
+        return a * WAD / b
+    }
+    
+    // WAD multiplication (18 decimals)
+    fn wadMul(a: U256, b: U256) -> U256 {
+        return a * b / WAD
+    }
+}
