@@ -13,7 +13,7 @@
   "infos": {
     "Constants": {
       "sourceFile": "constants.ral",
-      "sourceCodeHash": "7afd1990a0835cf38031a92ad759d0595dbaddf93a6a11732f88c903e5c79f54",
+      "sourceCodeHash": "bedb3c8e4fdeaed3d67e74998094827f6b78cfdc5a14bf2a392ab6baddfcbd3f",
       "bytecodeDebugPatch": "",
       "codeHashDebug": ""
     },
@@ -25,15 +25,15 @@
     },
     "DynamicRate": {
       "sourceFile": "dynamic_rate.ral",
-      "sourceCodeHash": "e90f6320f0003bc5cf0d8299ceca6a7f0b85d2eb99b8a9d7b577b0314069a707",
-      "bytecodeDebugPatch": "=10-1=1+5=1-2+1=1+9=2-2+2d=2-2+89=2-2+c8=2+2=1-1=2+3f4=1+5=3-2+e7=1-2+40=2-3=1-3+24=95-1+9=173-1+b=38+7a7e0214696e73657274206174206d617020706174683a2000=851-1+2=153-1+b=36+7a7e0214696e73657274206174206d617020706174683a2000=49-1+d160116037e031c43616c63756c6174696e6720626f72726f77207261746520666f7220012f00=544",
-      "codeHashDebug": "54eccf766ecafc62082775d952d158a180368e731ab5809f4cafdeeb9823831d"
+      "sourceCodeHash": "b6ed97d975114e58bdec291c7b1ec09a0199fe29464c227d23e84aa02bedf0d4",
+      "bytecodeDebugPatch": "=10-1=1+5=1-2+1=1+9=2-2+2d=2-2+89=2-2+c8=1+2=2-1=2+3f4=1+5=2-1=1-1=1-3+e=2-2+6d=95-1+9=173-1+b=38+7a7e0214696e73657274206174206d617020706174683a2000=1396",
+      "codeHashDebug": "c242ed2c71c5ed7d93576bc5f2ab657bba0c4bab8ed177ce7665b935dd4e0082"
     },
     "FixedRate": {
       "sourceFile": "fixed_rate.ral",
       "sourceCodeHash": "f62fc43f350c4d614f1963d494aaa7828e2c6344db5db24bf11578cf926b07ea",
       "bytecodeDebugPatch": "",
-      "codeHashDebug": "248c891547f41a6f98d6cffd676de7ad08bc1be1d9c09a57bfb98312965b15c1"
+      "codeHashDebug": "645bbdc785cb3ecb5c0e5ab20165a01f279b606ce71af15763bacf9d20eb69f2"
     },
     "IDynamicRate": {
       "sourceFile": "interface/IDynamicRate.ral",
@@ -55,13 +55,13 @@
     },
     "MarketParams": {
       "sourceFile": "constants.ral",
-      "sourceCodeHash": "7afd1990a0835cf38031a92ad759d0595dbaddf93a6a11732f88c903e5c79f54",
+      "sourceCodeHash": "bedb3c8e4fdeaed3d67e74998094827f6b78cfdc5a14bf2a392ab6baddfcbd3f",
       "bytecodeDebugPatch": "",
       "codeHashDebug": ""
     },
     "MarketState": {
       "sourceFile": "constants.ral",
-      "sourceCodeHash": "7afd1990a0835cf38031a92ad759d0595dbaddf93a6a11732f88c903e5c79f54",
+      "sourceCodeHash": "bedb3c8e4fdeaed3d67e74998094827f6b78cfdc5a14bf2a392ab6baddfcbd3f",
       "bytecodeDebugPatch": "",
       "codeHashDebug": ""
     },
