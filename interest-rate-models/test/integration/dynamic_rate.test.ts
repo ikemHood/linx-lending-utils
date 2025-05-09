@@ -59,21 +59,34 @@ describe('dynamic rate integration tests', () => {
             const rateAtTarget = await dynamicRate.view.getRateAtTarget({
                 args: { loanToken: testAddress, collateralToken: testAddress }
             })
+            expect(rateAtTarget.returns).toEqual(0n)
 
-            console.log('rateAtTarget', rateAtTarget)
+            console.log('rateAtTarget: ', rateAtTarget)
 
             // Call the view function 
             const viewResult = await dynamicRate.view.borrowRate({
                 args: { marketParams, marketState }
             })
+            console.log("viewResult: ", viewResult)
 
             // Verify view function returns a valid rate
             // The result is a CallContractResult object with returns property
             expect(viewResult.returns > 0n).toBeTruthy()
 
-            // Note: We can't directly test the borrowRate function in integration test
-            // since it requires the caller to be linx address. This would need to be 
-            // tested in a more complete integration environment.
+            // Test borrowRate with high utilization
+            const borrowRate = await dynamicRate.transact.getBorrowRateAndUpdate({
+                signer: signer,
+                attoAlphAmount: DUST_AMOUNT * 100n,
+                args: { marketParams, marketState }
+            })
+            console.log("borrowRate: ", borrowRate)
+
+            // Verify borrowRate was updated
+            const newRateAtTarget = await dynamicRate.view.getRateAtTarget({
+                args: { loanToken: marketParams.loanToken, collateralToken: marketParams.collateralToken }
+            })
+            console.log("newRateAtTarget: ", newRateAtTarget)
+            expect(newRateAtTarget.returns).toBeGreaterThan(rateAtTarget.returns)
         }
     }, 20000)
 }) 

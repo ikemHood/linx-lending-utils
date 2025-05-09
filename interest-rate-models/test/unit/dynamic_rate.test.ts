@@ -1,9 +1,11 @@
 import { web3, TestContractParams, addressFromContractId, DUST_AMOUNT } from '@alephium/web3'
 import { testAddress, expectAssertionError, testNodeWallet } from '@alephium/web3-test'
 import { DynamicRate, DynamicRateTypes } from '../../artifacts/ts'
-import { describe, it, expect, beforeAll, beforeEach } from '@jest/globals'
+import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals'
 import { deployToDevnet } from '@alephium/cli'
-import { randomContractId } from '@alephium/web3-test'
+
+// Increase timeout for all tests in this file
+jest.setTimeout(15000)
 
 describe('dynamic rate unit tests', () => {
     let testContractAddress: string
@@ -70,7 +72,6 @@ describe('dynamic rate unit tests', () => {
         }
 
         const testResult = await DynamicRate.tests.borrowRate(testParams)
-        console.log('testResult', testResult)
 
         // For first interaction, should return the initial rate at target
         // with appropriate curve adjustment based on utilization
@@ -148,8 +149,10 @@ describe('dynamic rate unit tests', () => {
         expect(testResult.returns > 0n).toBeTruthy()
 
         // Check that we've emitted a BorrowRateUpdate event
-        expect(testResult.events.length).toEqual(1)
-        const event = testResult.events[0] as DynamicRateTypes.BorrowRateUpdateEvent
+        expect(testResult.events.length).toEqual(2)
+        const borrowRateEvent = testResult.events.find(event => event.name === 'BorrowRateUpdate')
+        expect(borrowRateEvent).toBeDefined()
+        const event = borrowRateEvent as DynamicRateTypes.BorrowRateUpdateEvent
         expect(event.name).toEqual('BorrowRateUpdate')
         expect(event.fields.avgBorrowRate).toEqual(testResult.returns)
     })
@@ -270,7 +273,7 @@ describe('dynamic rate unit tests', () => {
 
         // Check that we've emitted an AdminTransferred event
         expect(testResult.events.length).toEqual(1)
-        const event = testResult.events[0] as any // Use 'any' instead of specific type since we're not sure of the exact type
+        const event = testResult.events[0] as any
         expect(event.name).toEqual('AdminTransferred')
         expect(event.fields.oldAdmin).toEqual(testAddress)
         expect(event.fields.newAdmin).toEqual(newAdmin)

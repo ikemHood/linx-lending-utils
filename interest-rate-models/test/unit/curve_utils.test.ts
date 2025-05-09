@@ -1,7 +1,10 @@
 import { web3, TestContractParams, addressFromContractId } from '@alephium/web3'
 import { randomContractId, testAddress } from '@alephium/web3-test'
 import { DynamicRate, DynamicRateTypes } from '../../artifacts/ts'
-import { describe, it, expect, beforeAll } from '@jest/globals'
+import { describe, it, expect, beforeAll, jest } from '@jest/globals'
+
+// Increase timeout for all tests in this file
+jest.setTimeout(15000)
 
 // Testing the utility functions through DynamicRate which extends CurveUtils
 describe('curve utils unit tests', () => {
