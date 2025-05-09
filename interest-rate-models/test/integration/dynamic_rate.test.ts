@@ -2,7 +2,11 @@ import { web3, DUST_AMOUNT } from '@alephium/web3'
 import { testNodeWallet } from '@alephium/web3-test'
 import { deployToDevnet } from '@alephium/cli'
 import { DynamicRate } from '../../artifacts/ts'
-import { describe, it, expect, beforeAll } from '@jest/globals'
+import { describe, it, expect, beforeAll, jest } from '@jest/globals'
+import { calculateBorrowRate } from '../utils/rate_calculations'
+
+// Increase timeout for all tests in this file
+jest.setTimeout(30000)
 
 describe('dynamic rate integration tests', () => {
     beforeAll(async () => {
@@ -48,45 +52,97 @@ describe('dynamic rate integration tests', () => {
             }
 
             const marketState = {
-                totalSupplyAssets: 100n * 10n ** 18n,
-                totalSupplyShares: 100n * 10n ** 18n,
-                totalBorrowAssets: 50n * 10n ** 18n,
-                totalBorrowShares: 50n * 10n ** 18n,
+                totalSupplyAssets: 3n * 10n ** 18n, // 3 tokens
+                totalSupplyShares: 3n * 10n ** 18n,
+                totalBorrowAssets: 15n * 10n ** 17n, // 1.5 tokens (50% utilization)
+                totalBorrowShares: 15n * 10n ** 17n,
                 lastUpdate: 1000n,
                 fee: 0n
             }
 
+            // 1. Test initial rate calculation with 50% utilization
+            // Calculate utilization and expected rate
+            const utilization = Number(marketState.totalBorrowAssets) / Number(marketState.totalSupplyAssets);
+            console.log(`Utilization: ${utilization * 100}%`);
+
+            // Get initial rate at target
             const rateAtTarget = await dynamicRate.view.getRateAtTarget({
                 args: { loanToken: testAddress, collateralToken: testAddress }
-            })
-            expect(rateAtTarget.returns).toEqual(0n)
+            });
 
-            console.log('rateAtTarget: ', rateAtTarget)
+            // Should be 0 for first interaction
+            expect(rateAtTarget.returns).toEqual(0n);
+            console.log('Initial rate at target:', rateAtTarget.returns.toString());
 
-            // Call the view function 
+            // Calculate expected rate using our calculation function (first interaction)
+            const expectedRate = calculateBorrowRate(marketState, rateAtTarget.returns);
+            console.log("Expected calculated rate:", expectedRate.toString());
+
+            // Get borrow rate from contract
             const viewResult = await dynamicRate.view.borrowRate({
                 args: { marketParams, marketState }
-            })
-            console.log("viewResult: ", viewResult)
+            });
+            console.log("Actual contract rate:", viewResult.returns.toString());
 
-            // Verify view function returns a valid rate
-            // The result is a CallContractResult object with returns property
-            expect(viewResult.returns > 0n).toBeTruthy()
+            // Verify our calculation exactly matches the contract's result
+            expect(viewResult.returns).toEqual(expectedRate);
 
-            // Test borrowRate with high utilization
+            // Test rate update via transaction
             const borrowRate = await dynamicRate.transact.getBorrowRateAndUpdate({
                 signer: signer,
                 attoAlphAmount: DUST_AMOUNT * 100n,
                 args: { marketParams, marketState }
-            })
-            console.log("borrowRate: ", borrowRate)
+            });
 
-            // Verify borrowRate was updated
+            // Verify rate was updated
             const newRateAtTarget = await dynamicRate.view.getRateAtTarget({
                 args: { loanToken: marketParams.loanToken, collateralToken: marketParams.collateralToken }
-            })
-            console.log("newRateAtTarget: ", newRateAtTarget)
-            expect(newRateAtTarget.returns).toBeGreaterThan(rateAtTarget.returns)
+            });
+            console.log("New rate at target:", newRateAtTarget.returns.toString());
+
+            // Rate at target should now be set
+            expect(newRateAtTarget.returns).toBeGreaterThan(0n);
+
+            // 2. Test with 90% utilization (at target)
+            const targetUtilizationMarketState = {
+                ...marketState,
+                totalBorrowAssets: 27n * 10n ** 17n, // 2.7 tokens (90% utilization - at target)
+                totalBorrowShares: 27n * 10n ** 17n
+            };
+
+            // Calculate expected rate at target utilization
+            const expectedTargetRate = calculateBorrowRate(targetUtilizationMarketState, newRateAtTarget.returns);
+            console.log("Expected target utilization rate:", expectedTargetRate.toString());
+
+            const targetUtilizationResult = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: targetUtilizationMarketState }
+            });
+            console.log("Actual target utilization rate:", targetUtilizationResult.returns.toString());
+
+            // Verify exact match for target utilization
+            expect(targetUtilizationResult.returns).toEqual(expectedTargetRate);
+
+            // 3. Test with very high utilization (95%)
+            const highUtilizationMarketState = {
+                ...marketState,
+                totalBorrowAssets: 285n * 10n ** 16n, // 2.85 tokens (95% utilization - above target)
+                totalBorrowShares: 285n * 10n ** 16n
+            };
+
+            // Calculate expected rate at high utilization
+            const expectedHighRate = calculateBorrowRate(highUtilizationMarketState, newRateAtTarget.returns);
+            console.log("Expected high utilization rate:", expectedHighRate.toString());
+
+            const highUtilizationResult = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: highUtilizationMarketState }
+            });
+            console.log("Actual high utilization rate:", highUtilizationResult.returns.toString());
+
+            // Verify exact match for high utilization
+            expect(highUtilizationResult.returns).toEqual(expectedHighRate);
+
+            // Verify the rate behavior
+            expect(highUtilizationResult.returns).toBeGreaterThan(targetUtilizationResult.returns);
         }
-    }, 20000)
+    })
 }) 
