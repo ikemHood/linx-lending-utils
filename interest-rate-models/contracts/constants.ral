@@ -39,6 +39,18 @@ Abstract Contract Constants() {
     /// One unit in fixed-point format (1.0 * 10^18)
     const WAD = 1e18i
     
+    /// ln(2) scaled by 1e18
+    const LN_2_INT = 693147180559945309i
+    
+    /// ln(1e-18) scaled by 1e18 (lower bound for wExp)
+    const LN_WEI_INT = -41446531673892822312i
+    
+    /// Upper input bound for wExp to prevent overflow: ln(type(int256).max / 1e36)
+    const WEXP_UPPER_BOUND = 93859467695000404319i
+    
+    /// Pre-computed wExp(WEXP_UPPER_BOUND) to cap extreme outputs
+    const WEXP_UPPER_VALUE = 57716089161558943949701069502944508345128422502756744429568i
+    
     /// Target utilization rate (90%)
     const TARGET_UTILIZATION = 9e17i
     
