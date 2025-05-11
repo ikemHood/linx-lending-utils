@@ -132,6 +132,82 @@ describe('dynamic rate integration tests', () => {
 
             // Verify the rate behavior
             expect(highUtilizationResult.returns).toBeGreaterThan(targetUtilizationResult.returns);
+
+            // 4. Edge case: zero utilization (0%)
+            const zeroUtilizationMarketState = {
+                ...marketState,
+                totalBorrowAssets: 0n,
+                totalBorrowShares: 0n
+            }
+
+            const expectedZeroRate = calculateBorrowRate(zeroUtilizationMarketState, newRateAtTarget.returns)
+            const zeroUtilizationResult = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: zeroUtilizationMarketState }
+            })
+
+            // Exact match with our calculation
+            expect(zeroUtilizationResult.returns).toEqual(expectedZeroRate)
+            // Rate at zero utilization should be below the target-utilization rate
+            expect(zeroUtilizationResult.returns).toBeLessThan(targetUtilizationResult.returns)
+
+            // 5. over-utilization (> 100%, e.g. 150%)
+            const overUtilizationMarketState = {
+                ...marketState,
+                totalBorrowAssets: 45n * 10n ** 17n, // 4.5 tokens → 150% utilization
+                totalBorrowShares: 45n * 10n ** 17n
+            }
+
+            const expectedOverRate = calculateBorrowRate(overUtilizationMarketState, newRateAtTarget.returns)
+            const overUtilizationResult = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: overUtilizationMarketState }
+            })
+
+            expect(overUtilizationResult.returns).toEqual(expectedOverRate)
+            // The rate for >100% utilization should exceed the 95% utilization rate
+            expect(overUtilizationResult.returns).toBeGreaterThan(highUtilizationResult.returns)
+
+            // 6. Time-dependent adaptation checks
+            const ONE_YEAR = 31536000n // seconds
+
+            // For utilization ABOVE target (95%) the borrow‐rate should INCREASE with time
+            const highUtilRecent = {
+                ...highUtilizationMarketState,
+                lastUpdate: highUtilizationMarketState.lastUpdate + ONE_YEAR // simulate an update 1 year later (smaller elapsed)
+            }
+            const highUtilOld = {
+                ...highUtilizationMarketState,
+                lastUpdate: highUtilizationMarketState.lastUpdate // older (baseline)
+            }
+
+            const recentHighRate = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: highUtilRecent }
+            })
+            const oldHighRate = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: highUtilOld }
+            })
+
+            // When utilization is above target, the rate should grow over time
+            expect(oldHighRate.returns).toBeGreaterThanOrEqual(recentHighRate.returns)
+
+            // For utilization BELOW target (50%) the borrow-rate should DECREASE with time
+            const lowUtilRecent = {
+                ...marketState,
+                lastUpdate: marketState.lastUpdate + ONE_YEAR // 1 year more recent (smaller elapsed)
+            }
+            const lowUtilOld = {
+                ...marketState,
+                lastUpdate: marketState.lastUpdate // baseline (older)
+            }
+
+            const recentLowRate = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: lowUtilRecent }
+            })
+            const oldLowRate = await dynamicRate.view.borrowRate({
+                args: { marketParams, marketState: lowUtilOld }
+            })
+
+            // When utilization is below target, the rate should decay over time
+            expect(oldLowRate.returns).toBeLessThanOrEqual(recentLowRate.returns)
         }
     })
 }) 

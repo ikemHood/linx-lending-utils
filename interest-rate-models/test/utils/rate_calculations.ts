@@ -1,4 +1,3 @@
-
 export const WAD = 10n ** 18n
 export const TARGET_UTILIZATION = 9n * 10n ** 17n // 0.9 * 10^18 (90%)
 const SECONDS_PER_YEAR = 31536000n
@@ -10,6 +9,12 @@ export const CURVE_STEEPNESS = 4n * 10n ** 18n
 export const MIN_RATE = 2n * 10n ** 16n // 0.02 * 10^18 (2%)
 export const MAX_RATE = 1n * 10n ** 20n // 1.0 * 10^20 (100%)
 
+// ----- Exponential approximation constants (WAD-scaled) -----
+const LN_2_INT = 693147180559945309n // ln(2) * 1e18
+const LN_WEI_INT = -41446531673892822312n // ln(1e-18)
+const WEXP_UPPER_BOUND = 93859467695000404319n // ln(type(int256).max / 1e36)
+const WEXP_UPPER_VALUE = 57716089161558943949701069502944508345128422502756744429568n // pre-computed e^{WEXP_UPPER_BOUND}
+
 export function wadMul(a: bigint, b: bigint): bigint {
     return (a * b) / WAD;
 }
@@ -20,15 +25,36 @@ export function wadDiv(a: bigint, b: bigint): bigint {
 }
 
 export function wadExp(x: bigint): bigint {
-    if (x === 0n) {
-        return WAD;
+    // Under-flow cut-off: exp(x) < 1e-18 ⇒ rounds to 0.
+    if (x < LN_WEI_INT) {
+        return 0n
     }
 
-    const x2 = wadMul(x, x);
-    const x3 = wadMul(x2, x);
+    // Upper bound to avoid overflow downstream (when multiplied by WAD)
+    if (x >= WEXP_UPPER_BOUND) {
+        return WEXP_UPPER_VALUE
+    }
 
-    // e^x ≈ 1 + x + x^2/2 + x^3/6
-    return WAD + x + wadDiv(x2, 2n * WAD) + wadDiv(x3, 6n * WAD);
+    // Decompose x = q · ln(2) + r  with  –ln(2)/2 ≤ r ≤ ln(2)/2
+    let roundingAdjustment = LN_2_INT / 2n
+    if (x < 0n) {
+        roundingAdjustment = -roundingAdjustment
+    }
+    const q = (x + roundingAdjustment) / LN_2_INT
+    const r = x - q * LN_2_INT
+
+    // e^r ≈ 1 + r + r²/2  (2-nd order Taylor)
+    const rSquared = wadMul(r, r)
+    let expR = WAD + r + rSquared / 2n
+
+    // e^x = 2^q · e^r  (bit-shift for power-of-two scaling)
+    if (q >= 0n) {
+        expR = expR << q
+    } else {
+        expR = expR >> (-q)
+    }
+
+    return expR
 }
 
 // Calculate new rate with exponential growth/decay (from CurveUtils)
