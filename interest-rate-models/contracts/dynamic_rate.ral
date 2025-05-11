@@ -5,9 +5,7 @@
 /// with a target utilization rate of 90%. Rates are adjusted smoothly to maintain market stability.
 Contract DynamicRate(
     /// Address of the Linx protocol contract
-    linx: Address,
-    /// Address of the admin who can transfer admin rights
-    mut admin: Address
+    linx: Address
 ) extends Constants(), StringUtils(), CurveUtils() implements IDynamicRate {
     // Storage
     /// Maps market IDs to their current rate at target utilization
@@ -22,12 +20,6 @@ Contract DynamicRate(
     /// * `newRateAtTarget` - New rate at target utilization
     event BorrowRateUpdate(id: ByteVec, avgBorrowRate: U256, newRateAtTarget: U256)
     
-    /// Emitted when admin rights are transferred
-    /// 
-    /// # Arguments
-    /// * `oldAdmin` - Previous admin address
-    /// * `newAdmin` - New admin address
-    event AdminTransferred(oldAdmin: Address, newAdmin: Address)
     
     /// Calculates and updates the borrow rate based on current market conditions
     /// 
@@ -43,10 +35,10 @@ Contract DynamicRate(
     /// 
     /// # Panics
     /// Panics if called by any address other than the Linx protocol
-    @using(preapprovedAssets = true, checkExternalCaller = false)
+    @using(preapprovedAssets = true, checkExternalCaller = true)
     pub fn getBorrowRateAndUpdate(marketParams: MarketParams, marketState: MarketState) -> U256 {
         let caller = callerAddress!()
-        assert!(caller == linx, ErrorCodes.NotAuthorized)
+        checkCaller!(caller == linx, ErrorCodes.NotAuthorized)
         
         let id = calcMarketId(marketParams.loanToken, marketParams.collateralToken)
         let (avgRate, endRateAtTarget) = calculateBorrowRate(id, marketState)
@@ -160,22 +152,6 @@ Contract DynamicRate(
         // Apply the rate curve
         let avgRate = applyCurve(avgRateAtTarget, err)
         return toU256!(avgRate), endRateAtTarget
-    }
-
-    /// Transfers admin rights to a new address
-    /// 
-    /// # Arguments
-    /// * `newAdmin` - Address of the new admin
-    /// 
-    /// # Panics
-    /// Panics if called by any address other than the current admin
-    @using(updateFields = true, checkExternalCaller = false)
-    pub fn transferAdmin(newAdmin: Address) -> () {
-      assert!(callerAddress!() == admin, ErrorCodes.NotAuthorized)
-
-      let oldAdmin = admin
-      admin = newAdmin
-      emit AdminTransferred(oldAdmin, newAdmin)
     }
 
     pub fn marketId(loanToken: Address, collateralToken: Address) -> ByteVec {

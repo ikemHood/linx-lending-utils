@@ -32,17 +32,6 @@ describe('dynamic rate integration tests', () => {
             expect(dynamicRate.groupIndex).toEqual(testGroup)
             const initialState = await dynamicRate.fetchState()
 
-            // Test transfer admin 
-            const newAdmin = testAddress // Using same address for simplicity
-            await dynamicRate.transact.transferAdmin({
-                signer: signer,
-                attoAlphAmount: DUST_AMOUNT * 3n,
-                args: { newAdmin }
-            })
-
-            // Verify admin was updated
-            const updatedState = await dynamicRate.fetchState()
-            expect(updatedState.fields.admin).toEqual(newAdmin)
 
             // Test borrowRate and borrowRateView with mock market data
             const marketParams = {

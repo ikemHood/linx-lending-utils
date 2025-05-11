@@ -15,7 +15,6 @@ const deployDynamicRate: DeployFunction<Settings> = async (
     const result = await deployer.deployContract(DynamicRate, {
         // The initial states of the dynamic rate contract
         initialFields: {
-            admin: deployer.account.address,
             linx: linxAddress
         }
     })

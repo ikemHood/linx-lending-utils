@@ -36,8 +36,7 @@ describe('dynamic rate unit tests', () => {
             initialAsset: { alphAmount: 10n ** 18n },
             // Initial state of the test contract
             initialFields: {
-                linx: linxAddress,
-                admin: account.address
+                linx: linxAddress
             },
             // Assets owned by the caller of the function
             inputAssets: [{ address: linxAddress, asset: { alphAmount: 10n ** 18n } }],
@@ -230,53 +229,6 @@ describe('dynamic rate unit tests', () => {
         // Should not revert with division by zero
         const testResult = await DynamicRate.tests.getBorrowRateAndUpdate(testParams)
         expect(testResult.returns).toBeDefined()
-    })
-
-    it('test transferAdmin unauthorized', async () => {
-        // Get an actual wallet address that's different from admin
-        const signer = await testNodeWallet()
-        const accounts = await signer.getAccounts()
-        // Find an account different from admin
-        const unauthorizedAccount = accounts.find(acc => acc.address !== testAddress) || accounts[0]
-        const unauthorizedAddress = unauthorizedAccount.address
-
-        const testParams = {
-            ...testParamsFixture,
-            inputAssets: [{ address: unauthorizedAddress, asset: { alphAmount: 10n ** 18n } }],
-            testArgs: {
-                newAdmin: unauthorizedAddress
-            }
-        }
-
-        await expectAssertionError(
-            DynamicRate.tests.transferAdmin(testParams),
-            testContractAddress,
-            Number(DynamicRate.consts.ErrorCodes.NotAuthorized)
-        )
-    })
-
-    it('test transferAdmin success', async () => {
-        const newAdmin = testAddress // Using same address for simplicity
-        const testParams = {
-            ...testParamsFixture,
-            inputAssets: [{ address: testAddress, asset: { alphAmount: 10n ** 18n } }],
-            testArgs: {
-                newAdmin
-            }
-        }
-
-        const testResult = await DynamicRate.tests.transferAdmin(testParams)
-
-        // Verify admin was updated
-        const contractState = testResult.contracts[0] as DynamicRateTypes.State
-        expect(contractState.fields.admin).toEqual(newAdmin)
-
-        // Check that we've emitted an AdminTransferred event
-        expect(testResult.events.length).toEqual(1)
-        const event = testResult.events[0] as any
-        expect(event.name).toEqual('AdminTransferred')
-        expect(event.fields.oldAdmin).toEqual(testAddress)
-        expect(event.fields.newAdmin).toEqual(newAdmin)
     })
 
     it('test rate adjustment over time', async () => {

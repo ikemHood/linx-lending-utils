@@ -26,8 +26,7 @@ describe('curve utils unit tests', () => {
             initialAsset: { alphAmount: 10n ** 18n },
             // Initial state of the test contract
             initialFields: {
-                linx: linxAddress,
-                admin: testAddress
+                linx: linxAddress
             },
             // Assets owned by the caller of the function
             inputAssets: [{ address: testAddress, asset: { alphAmount: 10n ** 18n } }],
