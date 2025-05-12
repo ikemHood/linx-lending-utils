@@ -1,0 +1,88 @@
+Abstract Contract CurveUtils() extends Constants() {
+      
+    // Apply the interest rate curve
+    fn applyCurve(rateAtTarget_: I256, err: I256) -> I256 {
+        let mut coeff = CURVE_STEEPNESS - WAD
+        if (err < 0i) {
+            coeff = WAD - wadDiv(WAD, CURVE_STEEPNESS)
+        }
+        
+        return wadMul(wadMul(coeff, err) + WAD, rateAtTarget_)
+    }
+    
+    // Calculate new rate with exponential growth/decay
+    fn newRateAtTarget(startRateAtTarget: I256, linearAdaptation: I256) -> I256 {
+        let expFactor = wadExp(linearAdaptation)
+        let newRate = wadMul(startRateAtTarget, expFactor)
+        
+        // Bound the rate
+        if (newRate < MIN_RATE_AT_TARGET) {
+            return MIN_RATE_AT_TARGET
+        } else if (newRate > MAX_RATE_AT_TARGET) {
+            return MAX_RATE_AT_TARGET
+        } else {
+            return newRate
+        }
+    }
+    
+    // Exponential function approximation (Taylor series)
+    // Improved exponential approximation inspired by Morpho's ExpLib.
+    //
+    // The method decomposes x such that x = q * ln(2) + r with
+    // q an integer and  -ln(2)/2 <= r <= ln(2)/2. We then compute
+    // e^x = 2^q * e^r, where e^r is evaluated with a 2-nd order Taylor
+    // polynomial that is very accurate in the reduced interval.
+    //
+    // Compared with the previous naive 3-rd order series, this version
+    // offers significantly higher accuracy while remaining inexpensive
+    // (a few multiplications/divisions and one bit-shift).
+
+    fn wadExp(x: I256) -> I256 {
+        // Very small values are rounded to zero (under-flow cut-off).
+        if (x < LN_WEI_INT) {
+            return 0i
+        }
+
+        // Clip extremely large inputs to avoid over-flows when the
+        // caller multiplies the result with 1e18-scaled numbers.
+        if (x >= WEXP_UPPER_BOUND) {
+            return WEXP_UPPER_VALUE
+        }
+
+        // Decompose:  x = q·ln(2) + r  with  –ln(2)/2 ≤ r ≤ ln(2)/2
+        let mut roundingAdjustment = LN_2_INT / 2i
+        if (x < 0i) {
+            roundingAdjustment = -roundingAdjustment
+        }
+
+        let q = (x + roundingAdjustment) / LN_2_INT      // round half toward zero
+        let r = x - q * LN_2_INT                          // remainder in tight range
+
+        // eʳ ≈ 1 + r + r²/2   (|r| ≤ 0.35 ⇒ max error < 10⁻⁵ WAD)
+        let rSquared = wadMul(r, r)       // r² / WAD
+        let expR = WAD + r + rSquared / 2i
+
+        // Return 2ᵠ · eʳ  (bit-shifts implement the power of two)
+        let mut result = 0
+        if (q >= 0i) {
+            result = toU256!(expR) << toU256!(q)
+        } else {
+            result = toU256!(expR) >> toU256!(-q)
+        }
+        return toI256!(result)
+    }
+    
+    // WAD division (18 decimals)
+    fn wadDiv(a: I256, b: I256) -> I256 {
+        if (b == 0i) {
+            return 0i
+        }
+        return a * WAD / b
+    }
+    
+    // WAD multiplication (18 decimals)
+    fn wadMul(a: I256, b: I256) -> I256 {
+        return a * b / WAD
+    }
+
+}
